@@ -1,0 +1,34 @@
+#vr-launch {
+  position: fixed; right: 20px; bottom: 20px; z-index: 999999;
+  width: 52px; height: 52px; border-radius: 50%; border: 0;
+  background: #4f46e5; color: #fff; font-size: 22px; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+#vr-panel {
+  position: fixed; right: 20px; bottom: 84px; z-index: 999999;
+  width: 340px; max-height: 75vh; overflow: auto;
+  background: #fff; border: 1px solid #ddd; border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: 12px;
+  font: 14px/1.4 system-ui, sans-serif; color: #222;
+}
+#vr-panel .vr-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+#vr-panel #vr-x { cursor: pointer; color: #888; padding: 2px 6px; }
+#vr-panel button {
+  width: 100%; padding: 9px; border: 0; border-radius: 8px; margin-top: 6px;
+  background: #4f46e5; color: #fff; font-weight: 600; cursor: pointer;
+}
+#vr-panel button:disabled { opacity: .5; cursor: wait; }
+#vr-panel button.vr-small { width: auto; padding: 6px 12px; margin-top: 0; }
+#vr-panel button.vr-secondary { background: #eee; color: #222; }
+#vr-panel .vr-sec { border-top: 1px solid #eee; margin-top: 10px; padding-top: 8px; }
+#vr-panel .vr-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 6px 0; }
+#vr-panel #vr-min { width: 52px; padding: 4px; border: 1px solid #ccc; border-radius: 6px; }
+#vr-panel #vr-list { max-height: 260px; overflow: auto; border: 1px solid #eee; border-radius: 8px; }
+#vr-panel .vr-it { display: flex; align-items: center; gap: 8px; padding: 6px; border-bottom: 1px solid #f2f2f2; cursor: pointer; }
+#vr-panel .vr-it:hover { background: #f7fbfb; }
+#vr-panel .vr-it img { width: 38px; height: 38px; object-fit: cover; border-radius: 6px; background: #eee; }
+#vr-panel .vr-t { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#vr-panel .vr-p { font-size: 12px; color: #666; white-space: nowrap; }
+#vr-panel .vr-qlog, #vr-panel #vr-log { font-size: 12px; color: #555; max-height: 140px; overflow: auto; white-space: pre-wrap; margin-top: 6px; }
+#vr-panel .err { color: #c00; }
+#vr-panel .ok { color: #070; }

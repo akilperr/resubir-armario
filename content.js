@@ -49,7 +49,10 @@
     try { data = JSON.parse(text); } catch { data = text; }
     if (!res.ok || (data && data.code && data.code !== 0)) {
       const msg = data?.message || data?.errors?.map?.((e) => e.value || e.field).join(", ") || res.status;
-      throw new Error(`${path} → ${msg}`);
+      const err = new Error(`${path} → ${msg}`);
+      err.status = res.status;
+      err.auth = res.status === 401 || /authori[sz]|unauthori[sz]ed|authentication|token/i.test(String(msg));
+      throw err;
     }
     return data;
   }
@@ -62,7 +65,7 @@
     try {
       const d = await api(`/api/v2/item_upload/items/${id}`);
       if (d.item) return d.item;
-    } catch { /* uso el público */ }
+    } catch (e) { if (e.auth) throw e; /* si no, uso el público */ }
     return (await api(`/api/v2/items/${id}?localize=false`)).item;
   }
 
@@ -122,6 +125,16 @@
   }
 
   async function relistOne(id, log) {
+    // Si ya se borró el antiguo en un intento anterior (p. ej. caducó la sesión justo después),
+    // publico directamente desde la copia guardada en vez de intentar leer un artículo que ya no existe.
+    const bk = (await store.get(K.backups, {}))[id];
+    if (bk && bk.origin === ORIGIN) {
+      log(`«${bk.title}»: publicando desde la copia guardada…`);
+      const created = await createItem(bk.payload);
+      await dropBackup(id);
+      await store.set(K.count, (await store.get(K.count, 0)) + 1);
+      return { title: bk.title, newId: created?.id };
+    }
     log(`Leyendo artículo ${id}…`);
     const item = await fetchItem(id);
     if (!item?.photos?.length) throw new Error("No se han podido leer las fotos.");
@@ -222,6 +235,14 @@
       await finishStep(true);
     } catch (e) {
       console.error("[Resubir Armario]", e);
+      if (e.auth && (await authRetries(next.id)) < MAX_AUTH_RELOADS) {
+        // Sesión caducada: no cuento el fallo. Recargo la pestaña (Vinted renueva el token al cargar)
+        // y el mismo artículo se reintenta en cuanto vuelva a estar disponible.
+        await bumpAuthRetries(next.id);
+        await qlog(`Sesión de Vinted caducada; recargo la pestaña y reintento «${next.title}»…`);
+        setTimeout(() => location.reload(), 1500);
+        return;
+      }
       await qlog(`«${next.title}»: ${e.message}`, "err");
       await finishStep(false);
     } finally {
@@ -230,7 +251,18 @@
     }
   }
 
+  // Cuántas recargas por sesión caducada llevamos para un mismo artículo (evita bucles de recarga)
+  const MAX_AUTH_RELOADS = 3;
+  async function authRetries(id) {
+    const r = await store.get("vr_auth_retry", null);
+    return r?.id === String(id) ? r.n : 0;
+  }
+  async function bumpAuthRetries(id) {
+    await store.set("vr_auth_retry", { id: String(id), n: (await authRetries(id)) + 1 });
+  }
+
   async function finishStep(ok) {
+    await store.del("vr_auth_retry");
     const q = await getQueue();
     q.items.shift();
     ok ? q.done++ : q.failed++;
